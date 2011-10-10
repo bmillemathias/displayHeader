@@ -5,7 +5,12 @@ from gi.repository import Soup, SoupGNOME, Gtk
 class displayHeader(Gtk.Box):
 
     @staticmethod
-    def clicked_button_action (button,dhobject):
+    def clicked_button_action (button, dhobject):
+        # clear the textview
+        textbuffer = dhobject.textview.get_buffer()
+        textbuffer.set_text("")
+        dhobject.textview.set_buffer(textbuffer)
+
         url = dhobject.entry.get_text()
         if len(url) == 0:
             return
@@ -15,6 +20,7 @@ class displayHeader(Gtk.Box):
         dhobject.session.send_message(message)
 
         if message.status_code == '200':
+            # clear the entry
             dhobject.entry.set_text('')
 
         print message.status_code
@@ -22,17 +28,17 @@ class displayHeader(Gtk.Box):
 
     @staticmethod
     def add_log_to_treeview (logger, printer, direction, header_line, textview):
-        textbuffer=textview.get_buffer()
+        textbuffer = textview.get_buffer()
         textbuffer.set_text(textbuffer.get_text(textbuffer.get_start_iter(),
-            textbuffer.get_end_iter(),
-            False) +
-            "%c %s \n" % (direction, header_line))
+                            textbuffer.get_end_iter(),
+                            False) +
+                            "%c %s \n" % (direction, header_line))
         textview.set_buffer(textbuffer)
 
 
     def __init__(self):
         Gtk.Box.__init__(self)
-        self.session = Soup.SessionSync.new()
+        self.session = Soup.SessionAsync.new()
         self.session.add_feature_by_type(SoupGNOME.ProxyResolverGNOME)
 
         self.session.add_feature(Soup.CookieJarText.new("cookies.txt", False))
@@ -56,12 +62,12 @@ class displayHeader(Gtk.Box):
         scrollwidget.set_shadow_type(Gtk.ShadowType.IN)
         self.pack_start(scrollwidget, True, True, 0)
 
-        textview = Gtk.TextView()
-        textview.set_editable(False)
-        scrollwidget.add(textview)
+        self.textview = Gtk.TextView()
+        self.textview.set_editable(False)
+        scrollwidget.add(self.textview)
 
         Logger = Soup.Logger.new(Soup.LoggerLogLevel.HEADERS, -1)
-        Logger.set_printer(displayHeader.add_log_to_treeview, textview)	
+        Logger.set_printer(displayHeader.add_log_to_treeview, self.textview)
         self.session.add_feature(Logger)
 
 if __name__ == '__main__':
